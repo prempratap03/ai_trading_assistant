@@ -1,0 +1,33 @@
+# Core
+numpy==1.26.4
+pandas==2.2.2
+matplotlib==3.9.2
+seaborn==0.13.2
+
+# Machine Learning / Deep Learning
+tensorflow==2.15.0
+scikit-learn==1.5.2
+prophet==1.1.6
+cvxpy==1.4.2
+
+# Natural Language Processing
+textblob==0.17.1
+transformers==4.45.1
+torch==2.4.1
+
+# Data Fetching & APIs
+yfinance==0.2.43
+praw==7.7.1  # Reddit API
+
+# Web App
+streamlit==1.39.0
+
+# Utilities
+requests==2.32.3
+beautifulsoup4==4.12.3
+lxml==5.3.0
+tqdm==4.66.4
+
+# Compatibility
+python-dateutil==2.9.0.post0
+pytz==2024.2

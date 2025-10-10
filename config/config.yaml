@@ -1,0 +1,69 @@
+# AI Trading Assistant Configuration
+
+# Application Settings
+app:
+  name: "AI Trading Assistant"
+  version: "1.0.0"
+  author: "Prem Pratap, Punit Chetwani, Zaheer Khan"
+  
+# Data Settings
+data:
+  default_period: "1y"
+  default_interval: "1d"
+  cache_ttl: 3600  # seconds
+  
+# Model Parameters
+models:
+  lstm:
+    lookback: 60
+    units: 50
+    dropout: 0.2
+    epochs: 50
+    batch_size: 32
+  
+  prophet:
+    changepoint_prior_scale: 0.05
+    seasonality_prior_scale: 10.0
+    
+# Risk Settings
+risk:
+  risk_free_rate: 0.02  # 2% annual
+  var_confidence_levels:
+    - 0.95
+    - 0.99
+    
+# Technical Indicators
+technical:
+  rsi_period: 14
+  rsi_overbought: 70
+  rsi_oversold: 30
+  
+  macd:
+    fast_period: 12
+    slow_period: 26
+    signal_period: 9
+  
+  bollinger_bands:
+    period: 20
+    std_dev: 2
+  
+  moving_averages:
+    short: 20
+    medium: 50
+    long: 200
+
+# Portfolio Optimization
+portfolio:
+  num_portfolios_mc: 10000
+  efficient_frontier_points: 100
+  
+# Visualization
+visualization:
+  theme: "plotly_white"
+  height_default: 600
+  width_default: 800
+  
+# Logging
+logging:
+  level: "INFO"
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
