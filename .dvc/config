@@ -1,0 +1,5 @@
+[core]
+    remote = s3remote
+['remote "s3remote"']
+    url = s3://mlops-dvc2-prem
+    endpointurl = https://s3.ap-south-1.amazonaws.com

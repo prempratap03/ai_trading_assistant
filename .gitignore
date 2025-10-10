@@ -1,0 +1,23 @@
+# Python bytecode and caches
+__pycache__/
+*.pyc
+
+# Virtual envs and local env files
+.venv/
+.env
+.env.*
+
+# DVC internals (future-proofing)
+.dvc/
+*.dvc
+
+# Common temp/logs
+logs/
+tmp/
+.cache/
+
+# OS cruft
+.DS_Store
+
+# Streamlit state cache (optional)
+.streamlit/
