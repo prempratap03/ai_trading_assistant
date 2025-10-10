@@ -1,0 +1,6 @@
+outs:
+- md5: 582e184fe021858dd4a75ceaaf2580c6
+  size: 17
+  isexec: true
+  hash: md5
+  path: hello.txt

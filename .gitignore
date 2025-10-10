@@ -8,8 +8,6 @@ __pycache__/
 .env.*
 
 # DVC internals (future-proofing)
-.dvc/
-*.dvc
 
 # Common temp/logs
 logs/
@@ -21,3 +19,6 @@ tmp/
 
 # Streamlit state cache (optional)
 .streamlit/
+# DVC internals (cache/tmp only)
+.dvc/cache/
+.dvc/tmp/
