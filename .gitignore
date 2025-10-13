@@ -22,3 +22,20 @@ tmp/
 # DVC internals (cache/tmp only)
 .dvc/cache/
 .dvc/tmp/
+# Python venvs
+venv/
+.env/
+.venv/
+
+# DVC cache
+.dvc/cache/
+
+# OS/editor
+.DS_Store
+*.log
+
+# __pycache__
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
