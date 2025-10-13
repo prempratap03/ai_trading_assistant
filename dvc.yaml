@@ -1,0 +1,34 @@
+stages:
+  fetch_data:
+    cmd: python scripts/fetch_data.py --ticker AAPL --out data/raw/aapl.csv
+    deps:
+      - scripts/fetch_data.py
+    outs:
+      - data/raw/aapl.csv
+
+  prepare_features:
+    cmd: python scripts/prepare_features.py --inp data/raw/aapl.csv --out data/processed/aapl_features.csv
+    deps:
+      - scripts/prepare_features.py
+      - data/raw/aapl.csv
+    outs:
+      - data/processed/aapl_features.csv
+
+  train_model:
+    cmd: python scripts/train_model.py --inp data/processed/aapl_features.csv --model_out models/rf_aapl.joblib --metrics_out artifacts/metrics.json
+    deps:
+      - scripts/train_model.py
+      - data/processed/aapl_features.csv
+    outs:
+      - models/rf_aapl.joblib
+    metrics:
+      - artifacts/metrics.json
+
+  predict:
+    cmd: python scripts/predict.py --inp data/processed/aapl_features.csv --model models/rf_aapl.joblib --out artifacts/predictions.csv
+    deps:
+      - scripts/predict.py
+      - data/processed/aapl_features.csv
+      - models/rf_aapl.joblib
+    outs:
+      - artifacts/predictions.csv
