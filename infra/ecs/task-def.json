@@ -1,0 +1,30 @@
+{
+  "family": "streamlit-task",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "512",
+  "memory": "1024",
+  "executionRoleArn": "arn:aws:iam::435133245477:role/ecsTaskExecutionRole",
+  "taskRoleArn": "arn:aws:iam::435133245477:role/streamlitTaskRole",
+  "containerDefinitions": [
+    {
+      "name": "streamlit",
+      "image": "REPLACED_BY_CI",
+      "essential": true,
+      "portMappings": [
+        { "containerPort": 8501, "hostPort": 8501, "protocol": "tcp" }
+      ],
+      "environment": [
+        { "name": "AWS_REGION", "value": "ap-south-1" }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-region": "ap-south-1",
+          "awslogs-group": "/ecs/streamlit-app",
+          "awslogs-stream-prefix": "ecs"
+        }
+      }
+    }
+  ]
+}
