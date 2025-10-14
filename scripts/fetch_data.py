@@ -1,30 +1,39 @@
-import argparse, os, json, sys, time
+import argparse, os, json, time
 from datetime import datetime, timedelta
 
-try:
-    import yfinance as yf
-except Exception:
-    yf = None
-
-def safe_dates(start_arg: str | None, end_arg: str | None):
-    # Avoid current UTC day; end yesterday to prevent partial-day issues
+def safe_dates(start_arg, end_arg):
     today = datetime.utcnow().date()
     end = end_arg or (today - timedelta(days=1)).strftime("%Y-%m-%d")
-    # 2 years back so we have enough rows after indicators dropna
     start = start_arg or (today - timedelta(days=730)).strftime("%Y-%m-%d")
     return start, end
 
-def fetch_with_retries(ticker: str, start: str, end: str, retries: int = 6, pause: int = 3):
-    last_err = None
-    for i in range(retries):
+def try_yfinance(ticker, start, end, retries=5, pause=2):
+    try:
+        import yfinance as yf
+    except Exception:
+        return None
+    last_err=None
+    for _ in range(retries):
         try:
             df = yf.download(ticker, start=start, end=end, auto_adjust=True, progress=False, threads=False)
             if df is not None and not df.empty:
-                return df
+                return df.reset_index()
         except Exception as e:
-            last_err = e
+            last_err=e
         time.sleep(pause)
-    raise RuntimeError(f"Failed to fetch after {retries} retries: {ticker} {start}..{end}; last_err={last_err}")
+    return None
+
+def try_stooq(ticker, start, end):
+    try:
+        import pandas_datareader.data as web
+        df = web.DataReader(ticker, 'stooq', start, end)
+        if df is not None and not df.empty:
+            df = df.sort_index().reset_index()
+            df.rename(columns={'Date':'Date','Open':'Open','High':'High','Low':'Low','Close':'Close','Volume':'Volume'}, inplace=True)
+            return df
+    except Exception:
+        return None
+    return None
 
 def main():
     ap = argparse.ArgumentParser()
@@ -34,21 +43,18 @@ def main():
     ap.add_argument("--out", required=True)
     args = ap.parse_args()
 
-    if yf is None:
-        raise RuntimeError("yfinance not installed. Run: pip install yfinance")
-
     os.makedirs(os.path.dirname(args.out), exist_ok=True)
     start, end = safe_dates(args.start, args.end)
-    df = fetch_with_retries(args.ticker, start, end, retries=8, pause=2).reset_index()
 
-    # Normalize date column
-    if 'Date' not in df.columns and 'Datetime' in df.columns:
-        df = df.rename(columns={'Datetime': 'Date'})
-    if 'Date' not in df.columns and df.index.name:
+    df = try_yfinance(args.ticker, start, end)
+    if df is None:
+        df = try_stooq(args.ticker, start, end)
+
+    if df is None or df.empty:
+        raise RuntimeError(f"Failed to fetch data for {args.ticker} {start}..{end} from both yfinance and stooq")
+
+    if 'Date' not in df.columns:
         df['Date'] = df.index
-
-    if df.empty:
-        raise RuntimeError(f"No data fetched for {args.ticker} {start}..{end}")
 
     df.to_csv(args.out, index=False)
     print(json.dumps({"rows": int(len(df)), "path": args.out, "ticker": args.ticker, "start": start, "end": end}))
