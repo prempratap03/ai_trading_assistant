@@ -1,0 +1,36 @@
+stages:
+  fetch_data:
+    cmd: python scripts/fetch_data.py --ticker AAPL --out data/raw/AAPL.csv --region US --rapidapi_key caed43ca42msh2468d6ad52bb245p1aba4bjsn45927cd29a2a
+    deps:
+      - scripts/fetch_data.py
+    outs:
+      - data/raw/AAPL.csv
+
+  prepare_features:
+    cmd: python scripts/prepare_features.py --inp data/raw/AAPL.csv --out data/processed/AAPL_features.csv
+    deps:
+    - scripts/prepare_features.py
+    - data/raw/AAPL.csv
+    outs:
+    - data/processed/AAPL_features.csv
+
+  train_model:
+    cmd: python scripts/train_model.py --inp data/processed/AAPL_features.csv --model_out models/model.pkl --metrics_out metrics/metrics.json
+    deps:
+      - scripts/train_model.py
+      - data/processed/AAPL_features.csv
+    outs:
+      - models/model.pkl
+    metrics:
+        - metrics/metrics.json
+
+
+  predict:
+    cmd: python scripts/predict.py --inp data/processed/AAPL_features.csv --model models/model.pkl --out predictions/output.csv
+    deps:
+      - data/processed/AAPL_features.csv
+      - models/model.pkl
+      - scripts/predict.py
+    outs:
+      - predictions/output.csv
+

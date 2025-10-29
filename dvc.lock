@@ -1,0 +1,88 @@
+schema: '2.0'
+stages:
+  fetch_data:
+    cmd: python scripts/fetch_data.py --ticker AAPL --out data/raw/AAPL.csv 
+      --region US --rapidapi_key 
+      caed43ca42msh2468d6ad52bb245p1aba4bjsn45927cd29a2a
+    deps:
+    - path: scripts/fetch_data.py
+      hash: md5
+      md5: 6dcd70406c000e7e09141b2e4e961e25
+      size: 1959
+      isexec: true
+    outs:
+    - path: data/raw/AAPL.csv
+      hash: md5
+      md5: c6884d0f77ac04c20316d28441a08ff3
+      size: 2232
+      isexec: true
+  prepare_features:
+    cmd: python scripts/prepare_features.py --inp data/raw/AAPL.csv --out 
+      data/processed/AAPL_features.csv
+    deps:
+    - path: data/raw/AAPL.csv
+      hash: md5
+      md5: c6884d0f77ac04c20316d28441a08ff3
+      size: 2232
+      isexec: true
+    - path: scripts/prepare_features.py
+      hash: md5
+      md5: 421a11f9588cc5cdfa223db5c1d1c56c
+      size: 1007
+      isexec: true
+    outs:
+    - path: data/processed/AAPL_features.csv
+      hash: md5
+      md5: 2c5ccf2fc6ee32f1935cc78cb412fa42
+      size: 384
+      isexec: true
+  train_model:
+    cmd: python scripts/train_model.py --inp data/processed/AAPL_features.csv 
+      --model_out models/model.pkl --metrics_out metrics/metrics.json
+    deps:
+    - path: data/processed/AAPL_features.csv
+      hash: md5
+      md5: 2c5ccf2fc6ee32f1935cc78cb412fa42
+      size: 384
+      isexec: true
+    - path: scripts/train_model.py
+      hash: md5
+      md5: ecd34d750ab9d77839a9919c3614bec8
+      size: 1164
+      isexec: true
+    outs:
+    - path: metrics/metrics.json
+      hash: md5
+      md5: 2ad6030b6971df60576b8858110a819d
+      size: 15
+      isexec: true
+    - path: models/model.pkl
+      hash: md5
+      md5: da689f8b4905868c3db7667b53eb0565
+      size: 78401
+      isexec: true
+  predict:
+    cmd: python scripts/predict.py --inp data/processed/AAPL_features.csv 
+      --model models/model.pkl --out predictions/output.csv
+    deps:
+    - path: data/processed/AAPL_features.csv
+      hash: md5
+      md5: 2c5ccf2fc6ee32f1935cc78cb412fa42
+      size: 384
+      isexec: true
+    - path: models/model.pkl
+      hash: md5
+      md5: da689f8b4905868c3db7667b53eb0565
+      size: 78401
+      isexec: true
+    - path: scripts/predict.py
+      hash: md5
+      md5: 370cbb9d6d8b08702b54e742348cb042
+      size: 695
+      isexec: true
+    outs:
+    - path: predictions/output.csv
+      hash: md5
+      md5: ff4072037fda0e0c31f556abbc09a4e7
+      size: 432
+      isexec: true
