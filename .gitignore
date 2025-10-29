@@ -1,49 +1,11 @@
-# Python bytecode and caches
-__pycache__/
-*.pyc
-
-# Virtual envs and local env files
-.venv/
-.env
-.env.*
-
-# DVC internals (future-proofing)
-
-# Common temp/logs
-logs/
-tmp/
-.cache/
-
-# OS cruft
-.DS_Store
-
-# Streamlit state cache (optional)
-.streamlit/
-# DVC internals (cache/tmp only)
-.dvc/cache/
-.dvc/tmp/
-# Python venvs
-venv/
-.env/
-.venv/
-
-# DVC cache
-.dvc/cache/
-
-# OS/editor
-.DS_Store
-*.log
-
-# __pycache__
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
 venv/
 __pycache__/
 *.pkl
+*.h5
+*.csv
+*.zip
+*.tar.gz
 data/
 models/
-metrics/
 predictions/
-venv/
+.dvc/cache/
