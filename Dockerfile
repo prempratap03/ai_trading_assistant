@@ -24,7 +24,7 @@ COPY . .
 ENV RAPIDAPI_KEY=${RAPIDAPI_KEY}
 ENV PYTHONUNBUFFERED=1
 
-# Expose API port (if using Flask)
+# Expose API port (if using Flask/Streamlit)
 EXPOSE 8080
 
 # Health check
