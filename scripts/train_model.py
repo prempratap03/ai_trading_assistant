@@ -14,7 +14,7 @@ def main():
     os.makedirs(os.path.dirname(args.metrics_out), exist_ok=True)
 
     df = pd.read_csv(args.inp)
-    features = ["SMA_20", "RSI_14", "Close", "Volume"]
+    features = ["close", "volume", "SMA_20", "RSI_14"]
     df = df.dropna()
     X = df[features]
     y = df["Return_1d"]

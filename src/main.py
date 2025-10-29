@@ -7,6 +7,8 @@ Team Members:
 - Punit Chetwani (22070126079)
 - Zaheer Khan (22070126066)
 """
+import sys, os
+sys.path.append(os.path.abspath(os.path.dirname(__file__)))
 
 import streamlit as st
 import pandas as pd

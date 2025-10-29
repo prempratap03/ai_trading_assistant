@@ -2,31 +2,30 @@ FROM python:3.10-slim
 
 WORKDIR /app
 
-# System deps
+# System dependencies
 RUN apt-get update && apt-get install -y \
     build-essential \
-    curl \
     git \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements first for caching
+# Copy dependencies first for better caching
 COPY requirements.txt .
 
-# Speed up and harden pip installs
-ENV PIP_DEFAULT_TIMEOUT=120 \
-    PIP_RETRIES=10 \
-    PIP_NO_CACHE_DIR=1
+# Install dependencies
+RUN pip install --no-cache-dir --upgrade pip \
+    && pip install -r requirements.txt \
+    && pip install "dvc[s3]"
 
-# Upgrade pip and install Python deps + DVC S3
-RUN python -m pip install --upgrade pip \
- && pip install --retries 10 --timeout 120 -r requirements.txt \
- && pip install --retries 10 --timeout 120 "dvc[s3]"
-
-# Copy application code
+# Copy the rest of the code
 COPY . .
 
-# Expose Streamlit port
-EXPOSE 8501
+# Environment variables
+ENV RAPIDAPI_KEY=${RAPIDAPI_KEY}
+ENV PYTHONUNBUFFERED=1
+
+# Expose API port (if using Flask)
+EXPOSE 8080
 
 # Health check
 HEALTHCHECK CMD curl --fail http://localhost:8501/_stcore/health || exit 1

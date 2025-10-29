@@ -10,7 +10,7 @@ def main():
 
     os.makedirs(os.path.dirname(args.out), exist_ok=True)
     df = pd.read_csv(args.inp).dropna()
-    features = ["SMA_20", "RSI_14", "Close", "Volume"]
+    features = ["close", "volume", "SMA_20", "RSI_14"]
     X = df[features]
 
     model = joblib.load(args.model)

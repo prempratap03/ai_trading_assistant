@@ -19,11 +19,11 @@ def main():
     args = ap.parse_args()
 
     os.makedirs(os.path.dirname(args.out), exist_ok=True)
-    df = pd.read_csv(args.inp, parse_dates=["Date"])
-    df = df.sort_values("Date")
-    df["SMA_20"] = sma(df["Close"], 20)
-    df["RSI_14"] = rsi(df["Close"], 14)
-    df["Return_1d"] = df["Close"].pct_change().shift(-1)  # next-day return (label)
+    df = pd.read_csv(args.inp, parse_dates=["timestamp"])
+    df = df.sort_values("timestamp")
+    df["SMA_20"] = sma(df["close"], 20)
+    df["RSI_14"] = rsi(df["close"], 14)
+    df["Return_1d"] = df["close"].pct_change().shift(-1)
     df.dropna().to_csv(args.out, index=False)
     print(json.dumps({"rows": int(df.dropna().shape[0]), "path": args.out}))
 
