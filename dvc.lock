@@ -3,24 +3,24 @@ stages:
   fetch_data:
     cmd: echo "using local seed CSV (no-op)"
   prepare_features:
-    cmd: python scripts/prepare_features.py --inp data/raw/aapl.csv --out 
+    cmd: python scripts/prepare_features.py --inp data/raw/stock_data.csv --out 
       data/processed/aapl_features.csv
     deps:
-    - path: data/raw/aapl.csv
+    - path: data/raw/stock_data.csv
       hash: md5
-      md5: 930ce8ad49941524ed6f33526450e7a7
-      size: 362
+      md5: c6884d0f77ac04c20316d28441a08ff3
+      size: 2232
       isexec: true
     - path: scripts/prepare_features.py
       hash: md5
-      md5: b26c7d21789b82d438645568765976c6
-      size: 1024
+      md5: 421a11f9588cc5cdfa223db5c1d1c56c
+      size: 1007
       isexec: true
     outs:
     - path: data/processed/aapl_features.csv
       hash: md5
-      md5: f498e9628a61ab885a891a62d06b50ed
-      size: 66
+      md5: 2c5ccf2fc6ee32f1935cc78cb412fa42
+      size: 384
       isexec: true
   train_model:
     cmd: python scripts/train_model.py --inp data/processed/aapl_features.csv 
@@ -28,24 +28,24 @@ stages:
     deps:
     - path: data/processed/aapl_features.csv
       hash: md5
-      md5: b48b3e7c86de927cddfdddab9050969f
-      size: 49590
+      md5: 2c5ccf2fc6ee32f1935cc78cb412fa42
+      size: 384
       isexec: true
     - path: scripts/train_model.py
       hash: md5
-      md5: ac718d9ffafd7e2a9d90510a1dcbd0b3
+      md5: ecd34d750ab9d77839a9919c3614bec8
       size: 1164
       isexec: true
     outs:
     - path: artifacts/metrics.json
       hash: md5
-      md5: 658de4b656f4cc7030e6361b71080b19
-      size: 32
+      md5: 2ad6030b6971df60576b8858110a819d
+      size: 15
       isexec: true
     - path: models/rf_aapl.joblib
       hash: md5
-      md5: 732c269c82124f314062cc943bc17a63
-      size: 7025537
+      md5: da689f8b4905868c3db7667b53eb0565
+      size: 78401
       isexec: true
   predict:
     cmd: python scripts/predict.py --inp data/processed/aapl_features.csv 
@@ -53,22 +53,22 @@ stages:
     deps:
     - path: data/processed/aapl_features.csv
       hash: md5
-      md5: b48b3e7c86de927cddfdddab9050969f
-      size: 49590
+      md5: 2c5ccf2fc6ee32f1935cc78cb412fa42
+      size: 384
       isexec: true
     - path: models/rf_aapl.joblib
       hash: md5
-      md5: 732c269c82124f314062cc943bc17a63
-      size: 7025537
+      md5: da689f8b4905868c3db7667b53eb0565
+      size: 78401
       isexec: true
     - path: scripts/predict.py
       hash: md5
-      md5: 6f175fdc5e52f6271a62c379f7fda5a2
+      md5: 370cbb9d6d8b08702b54e742348cb042
       size: 695
       isexec: true
     outs:
     - path: artifacts/predictions.csv
       hash: md5
-      md5: ad5f80954a38541f7766cbb58e6116c4
-      size: 57402
+      md5: ff4072037fda0e0c31f556abbc09a4e7
+      size: 432
       isexec: true

@@ -1,32 +1,31 @@
+vars:
+  - vars.yaml
 stages:
-  fetch_data:
-    cmd: echo "using local seed CSV (no-op)"
+  
+
   prepare_features:
-    cmd: python scripts/prepare_features.py --inp data/raw/aapl.csv --out 
-      data/processed/aapl_features.csv
+    cmd: python scripts/prepare_features.py --inp data/raw/stock_data.csv --out data/processed/aapl_features.csv
     deps:
-    - scripts/prepare_features.py
-    - data/raw/aapl.csv
+      - scripts/prepare_features.py
+      - data/raw/stock_data.csv
     outs:
-    - data/processed/aapl_features.csv
+      - data/processed/aapl_features.csv
 
   train_model:
-    cmd: python scripts/train_model.py --inp data/processed/aapl_features.csv 
-      --model_out models/rf_aapl.joblib --metrics_out artifacts/metrics.json
+    cmd: python scripts/train_model.py --inp data/processed/aapl_features.csv --model_out models/rf_aapl.joblib --metrics_out artifacts/metrics.json
     deps:
-    - scripts/train_model.py
-    - data/processed/aapl_features.csv
+      - scripts/train_model.py
+      - data/processed/aapl_features.csv
     outs:
-    - models/rf_aapl.joblib
+      - models/rf_aapl.joblib
     metrics:
-    - artifacts/metrics.json
+      - artifacts/metrics.json
 
   predict:
-    cmd: python scripts/predict.py --inp data/processed/aapl_features.csv 
-      --model models/rf_aapl.joblib --out artifacts/predictions.csv
+    cmd: python scripts/predict.py --inp data/processed/aapl_features.csv --model models/rf_aapl.joblib --out artifacts/predictions.csv
     deps:
-    - scripts/predict.py
-    - data/processed/aapl_features.csv
-    - models/rf_aapl.joblib
+      - scripts/predict.py
+      - data/processed/aapl_features.csv
+      - models/rf_aapl.joblib
     outs:
-    - artifacts/predictions.csv
+      - artifacts/predictions.csv
