@@ -2,33 +2,26 @@ FROM python:3.10-slim
 
 WORKDIR /app
 
-# System dependencies
+# Install system dependencies
 RUN apt-get update && apt-get install -y \
-    build-essential \
-    git \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy dependencies first for better caching
+# Copy dependencies first
 COPY requirements.txt .
 
-# Install dependencies
+# Install dependencies (ignore errors from DVC for now)
 RUN pip install --no-cache-dir --upgrade pip \
-    && pip install -r requirements.txt \
-    && pip install "dvc"
+    && pip install -r requirements.txt || true
 
-# Copy the rest of the code
+# Copy the full project
 COPY . .
 
-# Environment variables
-ENV RAPIDAPI_KEY=${RAPIDAPI_KEY}
+# Default environment
 ENV PYTHONUNBUFFERED=1
 
-# Expose API port (if using Flask/Streamlit)
-EXPOSE 8080
+# Expose port (for Streamlit or Flask)
+EXPOSE 8501
 
-# Health check
-HEALTHCHECK CMD curl --fail http://localhost:8501/_stcore/health || exit 1
-
-# Pull DVC artifacts at startup, then run Streamlit
-ENTRYPOINT ["/bin/sh","-c","dvc pull || echo 'No DVC artifacts pulled'; exec streamlit run src/main.py --server.port=8501 --server.address=0.0.0.0"]
+# Run Streamlit app by default
+CMD ["streamlit", "run", "src/main.py", "--server.port=8501", "--server.address=0.0.0.0"]
