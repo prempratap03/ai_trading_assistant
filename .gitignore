@@ -39,3 +39,10 @@ __pycache__/
 *.pyc
 *.pyo
 *.pyd
+venv/
+__pycache__/
+*.pkl
+data/
+models/
+metrics/
+predictions/
