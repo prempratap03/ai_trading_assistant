@@ -1,0 +1,74 @@
+schema: '2.0'
+stages:
+  fetch_data:
+    cmd: echo "using local seed CSV (no-op)"
+  prepare_features:
+    cmd: python scripts/prepare_features.py --inp data/raw/aapl.csv --out 
+      data/processed/aapl_features.csv
+    deps:
+    - path: data/raw/aapl.csv
+      hash: md5
+      md5: 930ce8ad49941524ed6f33526450e7a7
+      size: 362
+      isexec: true
+    - path: scripts/prepare_features.py
+      hash: md5
+      md5: b26c7d21789b82d438645568765976c6
+      size: 1024
+      isexec: true
+    outs:
+    - path: data/processed/aapl_features.csv
+      hash: md5
+      md5: f498e9628a61ab885a891a62d06b50ed
+      size: 66
+      isexec: true
+  train_model:
+    cmd: python scripts/train_model.py --inp data/processed/aapl_features.csv 
+      --model_out models/rf_aapl.joblib --metrics_out artifacts/metrics.json
+    deps:
+    - path: data/processed/aapl_features.csv
+      hash: md5
+      md5: b48b3e7c86de927cddfdddab9050969f
+      size: 49590
+      isexec: true
+    - path: scripts/train_model.py
+      hash: md5
+      md5: ac718d9ffafd7e2a9d90510a1dcbd0b3
+      size: 1164
+      isexec: true
+    outs:
+    - path: artifacts/metrics.json
+      hash: md5
+      md5: 658de4b656f4cc7030e6361b71080b19
+      size: 32
+      isexec: true
+    - path: models/rf_aapl.joblib
+      hash: md5
+      md5: 732c269c82124f314062cc943bc17a63
+      size: 7025537
+      isexec: true
+  predict:
+    cmd: python scripts/predict.py --inp data/processed/aapl_features.csv 
+      --model models/rf_aapl.joblib --out artifacts/predictions.csv
+    deps:
+    - path: data/processed/aapl_features.csv
+      hash: md5
+      md5: b48b3e7c86de927cddfdddab9050969f
+      size: 49590
+      isexec: true
+    - path: models/rf_aapl.joblib
+      hash: md5
+      md5: 732c269c82124f314062cc943bc17a63
+      size: 7025537
+      isexec: true
+    - path: scripts/predict.py
+      hash: md5
+      md5: 6f175fdc5e52f6271a62c379f7fda5a2
+      size: 695
+      isexec: true
+    outs:
+    - path: artifacts/predictions.csv
+      hash: md5
+      md5: ad5f80954a38541f7766cbb58e6116c4
+      size: 57402
+      isexec: true

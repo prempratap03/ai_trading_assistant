@@ -5,7 +5,7 @@ Analyzes market news and social media sentiment
 
 import pandas as pd
 import numpy as np
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Tuple
 from textblob import TextBlob
 import warnings
 warnings.filterwarnings('ignore')
