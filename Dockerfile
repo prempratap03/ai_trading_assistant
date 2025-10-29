@@ -15,7 +15,7 @@ COPY requirements.txt .
 # Install dependencies
 RUN pip install --no-cache-dir --upgrade pip \
     && pip install -r requirements.txt \
-    && pip install "dvc["
+    && pip install "dvc"
 
 # Copy the rest of the code
 COPY . .
