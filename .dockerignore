@@ -1,0 +1,19 @@
+# Ignore large unnecessary files and folders
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.csv
+*.pkl
+*.h5
+*.pt
+*.onnx
+*.pb
+data/
+models/
+predictions/
+.dvc/
+.git/
+.gitignore
+.env

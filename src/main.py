@@ -80,8 +80,8 @@ def main():
     """Main application"""
     
     # Header
-    st.markdown('<div class="main-header">📈 AI Trading Assistant</div>', unsafe_allow_html=True)
-    st.markdown("**Team:** Prem Pratap (22070126078), Punit Chetwani (22070126079), Zaheer Khan (22070126066)")
+    st.markdown('<div class="main-header"> AI Trading Assistant</div>', unsafe_allow_html=True)
+    st.markdown("**Team:** Prem Pratap, Punit Chetwani, Paarth Chauhan,")
     
     # Sidebar
     with st.sidebar:
@@ -96,7 +96,6 @@ def main():
                 "💼 Portfolio Optimization",
                 "⚠️ Risk Assessment",
                 "📉 Technical Analysis",
-                "📰 Sentiment Analysis",
                 "ℹ️ About"
             ]
         )
@@ -244,7 +243,30 @@ def prediction_page(ticker: str, period: str):
                     f"{ticker} Price Predictions ({forecast_days} days)"
                 )
                 st.plotly_chart(fig, use_container_width=True)
-                
+                # --- EVALUATE MODEL PERFORMANCE ---
+                from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+                import numpy as np
+
+                def evaluate_predictions(y_true, y_pred):
+                    # Align lengths (only compare the last actuals)
+                    min_len = min(len(y_true), len(y_pred))
+                    y_true = y_true[-min_len:]
+                    y_pred = y_pred[-min_len:]
+
+                    mae = mean_absolute_error(y_true, y_pred)
+                    rmse = mean_squared_error(y_true, y_pred, squared=False)
+                    r2 = r2_score(y_true, y_pred)
+                    mape = np.mean(np.abs((y_true - y_pred) / y_true)) * 100
+                    directional = np.mean(np.sign(np.diff(y_true)) == np.sign(np.diff(y_pred))) * 100
+
+                    return {
+                        "MAE": mae,
+                        "RMSE": rmse,
+                        "R²": r2,
+                        "MAPE (%)": mape,
+                        "Directional Accuracy (%)": directional
+                    }
+
                 # Prediction summary
                 st.markdown("### Prediction Summary")
                 
@@ -520,79 +542,6 @@ def technical_page(ticker: str, period: str):
             st.error(f"Error in technical analysis: {str(e)}")
 
 
-def sentiment_page(ticker: str):
-    """Sentiment analysis page"""
-    
-    st.markdown('<div class="sub-header">📰 Sentiment Analysis</div>', unsafe_allow_html=True)
-    
-    use_transformer = st.checkbox("Use Advanced AI Model (slower but more accurate)")
-    
-    if st.button("Analyze Sentiment", type="primary"):
-        try:
-            with st.spinner("Fetching and analyzing news..."):
-                # Analyze sentiment
-                analysis = st.session_state.sentiment_analyzer.analyze_stock_sentiment(
-                    ticker, use_transformer
-                )
-                
-                if 'error' in analysis:
-                    st.warning(f"Could not fetch news: {analysis['error']}")
-                    return
-                
-                # Display aggregate sentiment
-                st.markdown("### Overall Sentiment")
-                
-                aggregate = analysis['aggregate']
-                
-                col1, col2, col3, col4 = st.columns(4)
-                
-                with col1:
-                    sentiment_emoji = "🟢" if aggregate['overall_sentiment'] == 'positive' else (
-                        "🔴" if aggregate['overall_sentiment'] == 'negative' else "🟡"
-                    )
-                    st.metric("Sentiment", f"{sentiment_emoji} {aggregate['overall_sentiment'].upper()}")
-                
-                with col2:
-                    st.metric("Sentiment Score", f"{aggregate['sentiment_score']:.1f}/100")
-                
-                with col3:
-                    st.metric("Positive News", f"{aggregate['positive_ratio']*100:.1f}%")
-                
-                with col4:
-                    st.metric("Total Articles", aggregate['total_articles'])
-                
-                # Trading signal
-                signal = analysis['signal']
-                signal_text = "BUY" if signal == 1 else ("SELL" if signal == -1 else "HOLD")
-                signal_color = "green" if signal == 1 else ("red" if signal == -1 else "orange")
-                
-                st.markdown(f"### Sentiment-Based Signal: <span style='color:{signal_color}; font-size:2rem; font-weight:bold'>{signal_text}</span>", 
-                           unsafe_allow_html=True)
-                
-                # Keywords
-                st.markdown("### Trending Keywords")
-                keywords_df = pd.DataFrame(analysis['keywords'], columns=['Keyword', 'Frequency'])
-                st.bar_chart(keywords_df.set_index('Keyword'))
-                
-                # Recent articles
-                st.markdown("### Recent News Articles")
-                
-                articles_df = pd.DataFrame(analysis['articles'])
-                
-                for _, article in articles_df.head(10).iterrows():
-                    sentiment_color = "green" if article['sentiment'] == 'positive' else (
-                        "red" if article['sentiment'] == 'negative' else "gray"
-                    )
-                    
-                    st.markdown(f"**{article['title']}**")
-                    st.markdown(f"<span style='color:{sentiment_color}'>● {article['sentiment'].upper()}</span> | "
-                               f"Source: {article['source']} | "
-                               f"Polarity: {article['polarity']:.2f}",
-                               unsafe_allow_html=True)
-                    st.markdown("---")
-                
-        except Exception as e:
-            st.error(f"Error in sentiment analysis: {str(e)}")
 
 
 def about_page():
@@ -605,10 +554,7 @@ def about_page():
     
     This application provides comprehensive tools for stock market analysis and investment decision-making.
     
-    ### 🎓 Team Members
-    - **Prem Pratap** (22070126078)
-    - **Punit Chetwani** (22070126079)
-    - **Zaheer Khan** (22070126066)
+    
     
     ### 🚀 Features
     
@@ -617,7 +563,7 @@ def about_page():
     3. **Portfolio Optimization** - Modern Portfolio Theory implementation
     4. **Risk Assessment** - Comprehensive risk metrics (VaR, Sharpe, etc.)
     5. **Technical Analysis** - RSI, MACD, Bollinger Bands, and trading signals
-    6. **Sentiment Analysis** - News sentiment analysis with AI
+    
     
     ### 🛠️ Technologies Used
     
@@ -628,19 +574,7 @@ def about_page():
     - **NLP:** Transformers, TextBlob
     - **Optimization:** SciPy, cvxpy
     
-    ### 📚 Documentation
     
-    For detailed documentation, please refer to the `docs/` directory in the repository.
-    
-    ### ⚠️ Disclaimer
-    
-    This application is for educational purposes only. The predictions and recommendations 
-    provided should not be considered as financial advice. Always do your own research 
-    and consult with a qualified financial advisor before making investment decisions.
-    
-    ### 📧 Contact
-    
-    For questions or feedback, please contact the team members.
     """)
 
 

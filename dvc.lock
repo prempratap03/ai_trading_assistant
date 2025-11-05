@@ -36,31 +36,6 @@ stages:
       md5: 2c5ccf2fc6ee32f1935cc78cb412fa42
       size: 384
       isexec: true
-  train_model:
-    cmd: python scripts/train_model.py --inp data/processed/AAPL_features.csv 
-      --model_out models/model.pkl --metrics_out metrics/metrics.json
-    deps:
-    - path: data/processed/AAPL_features.csv
-      hash: md5
-      md5: 2c5ccf2fc6ee32f1935cc78cb412fa42
-      size: 384
-      isexec: true
-    - path: scripts/train_model.py
-      hash: md5
-      md5: ecd34d750ab9d77839a9919c3614bec8
-      size: 1164
-      isexec: true
-    outs:
-    - path: metrics/metrics.json
-      hash: md5
-      md5: 2ad6030b6971df60576b8858110a819d
-      size: 15
-      isexec: true
-    - path: models/model.pkl
-      hash: md5
-      md5: da689f8b4905868c3db7667b53eb0565
-      size: 78401
-      isexec: true
   predict:
     cmd: python scripts/predict.py --inp data/processed/AAPL_features.csv 
       --model models/model.pkl --out predictions/output.csv

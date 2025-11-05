@@ -1,0 +1,4 @@
+a7e5c8962cdb65aa2d47beec09e2d0286247bfc9 27387 msft.csv
+12c85ac2719e44c505cc629a4c37e89732eba783 34280 sample_data.csv
+f9b32eacae2c4af5c97444a4ce3f341693fac5bb 173 sample_portfolio.csv
+66bad636c240ac82b29e0e7374952e834f45a016 2232 stock_data.csv

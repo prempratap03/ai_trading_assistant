@@ -27,6 +27,8 @@ jobs:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_KEY }}
+          timeout: 40m
+
           script: |
             sudo docker stop $(sudo docker ps -q) || true
             sudo docker pull ${{ secrets.DOCKERHUB_USERNAME }}/ai_trading_assistant:latest
