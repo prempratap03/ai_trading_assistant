@@ -1,4 +1,4 @@
-name: CI/CD with DVC, Docker & EC2
+name: CI/CD with DVC and EC2 Docker Build
 
 on:
   push:
@@ -6,75 +6,42 @@ on:
       - main
 
 jobs:
-  build-and-deploy:
+  deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Free up space on GitHub runner
-        run: |
-          echo "🧹 Cleaning up disk space..."
-          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/lib/android /usr/local/share/boost
-          sudo docker system prune -af || true
-          df -h
-
-      # 1️⃣ Pull latest code
-      - name: Checkout code
+      - name: Checkout repo
         uses: actions/checkout@v4
         with:
           lfs: true
 
-      # 2️⃣ Set up Python environment
-      - name: Set up Python
+      - name: Set up Python for DVC
         uses: actions/setup-python@v5
         with:
           python-version: "3.10"
 
-      # 3️⃣ Install dependencies
-      - name: Install dependencies
+      - name: Install DVC (for reproducibility)
         run: |
-          pip install --upgrade pip
-          pip install -r requirements.txt
           pip install dvc[s3]
+          dvc pull || echo "No DVC data needed"
 
-      # 4️⃣ Configure AWS credentials for DVC
-      - name: Configure AWS credentials
+      - name: Configure AWS (optional for S3)
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
 
-      - name: Pull DVC data/models from S3
-        run: |
-        dvc pull || echo "Skipping S3 pull (local DVC only)"
-        echo "✅ Pulled latest models from DVC (or skipped if local)"
-
-
-      # 8️⃣ Build and tag Docker image
-      - name: Build Docker image
-        run: docker build -t ai_trading_assistant .
-
-      # 9️⃣ Authenticate to Docker Hub
-      - name: Login to Docker Hub
-        run: echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u premp9486 --password-stdin
-
-      # 🔟 Push image to Docker Hub
-      - name: Push image to Docker Hub
-        run: |
-          docker tag ai_trading_assistant premp9486/ai_trading_assistant:latest
-          docker push premp9486/ai_trading_assistant:latest
-
-      # 1️⃣1️⃣ SSH into EC2 and redeploy container
-      - name: Deploy on EC2
+      - name: SSH into EC2 and build & run Docker
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: 3.7.66.15
           username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
+            cd ~/ai_trading_assistant || git clone https://github.com/prempratap03/ai_trading_assistant.git && cd ai_trading_assistant
+            git pull origin main
             sudo docker stop $(sudo docker ps -q) || true
-            sudo docker system prune -af || true
-            sudo docker pull premp9486/ai_trading_assistant:latest
-            sudo docker run -d -p 8501:8501 \
-              -e RAPIDAPI_KEY=${{ secrets.RAPIDAPI_KEY }} \
-              premp9486/ai_trading_assistant:latest
+            sudo docker system prune -af
+            sudo docker build -t ai_trading_assistant .
+            sudo docker run -d -p 8501:8501 -e RAPIDAPI_KEY=${{ secrets.RAPIDAPI_KEY }} ai_trading_assistant
