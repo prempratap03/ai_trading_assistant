@@ -37,7 +37,7 @@ jobs:
       - name: SSH into EC2 and deploy container
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: 65.2.37.102          # ✅ Updated EC2 public IP
+          host: 13.203.78.90          # ✅ Updated EC2 public IP
           username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
           script_stop: true
