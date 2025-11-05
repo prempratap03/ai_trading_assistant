@@ -1,4 +1,1 @@
-[core]
-    remote = modelstore
-['remote "modelstore"']
-    url = s3://mlops-prem-models
+
