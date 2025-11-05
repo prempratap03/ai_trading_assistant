@@ -6,7 +6,8 @@ A comprehensive FinTech application that leverages Machine Learning, Modern Port
 
 - **Prem Pratap** (22070126078)
 - **Punit Chetwani** (22070126079)
-- **Zaheer Khan** (22070126066)
+- **Ayush Anand** (22070126025)
+- **Paarth Chauhan** (22070126069)
 
 ## 🌟 Features
 
@@ -278,22 +279,4 @@ This project is created for educational purposes as part of a FinTech assignment
 - [ ] Mobile app version
 - [ ] Multi-language support
 
-## 📧 Contact
 
-For questions, feedback, or support:
-- Prem Pratap: [Contact Information]
-- Punit Chetwani: [Contact Information]
-- Zaheer Khan: [Contact Information]
-
-## 🙏 Acknowledgments
-
-- yfinance for market data
-- Streamlit for the amazing framework
-- TensorFlow and Prophet teams
-- Open-source community
-
----
-
-**Made with ❤️ by Team [Your Team Name]**
-
-*Last Updated: October 2025*
