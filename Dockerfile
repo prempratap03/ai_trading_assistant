@@ -1,50 +1,42 @@
-# =============================
-# STAGE 1: Builder
-# =============================
-FROM python:3.10-slim AS builder
+# ---- Stage 1: Builder ----
+FROM python:3.10-slim as builder
 
-# Set working directory
 WORKDIR /app
 
-# Install build tools only for this stage
+# Install system dependencies needed for Prophet and other libs
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
-    curl \
+    libpython3-dev \
+    gcc \
+    g++ \
+    git \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy dependencies first for caching
+# Copy only requirement files first (to leverage caching)
 COPY requirements.txt .
 
-
-# Install only necessary dependencies in build layer
-RUN pip install --no-cache-dir --upgrade pip \
- && pip install --no-cache-dir --upgrade cmdstanpy==1.2.0 prophet==1.1.5 \
+# Install only core dependencies with no cache
+RUN pip install --no-cache-dir --upgrade pip setuptools wheel \
+ && pip install --no-cache-dir cmdstanpy==1.2.0 prophet==1.1.5 \
  && pip install --no-cache-dir -r requirements.txt \
  && rm -rf /root/.cache /tmp/*
 
-
-# Copy full project
-COPY . .
-
-# =============================
-# STAGE 2: Final lightweight image
-# =============================
+# ---- Stage 2: Runtime ----
 FROM python:3.10-slim
 
 WORKDIR /app
 
-# Copy installed packages from builder (smaller final image)
+# Copy installed Python packages from builder image
 COPY --from=builder /usr/local/lib/python3.10 /usr/local/lib/python3.10
-COPY --from=builder /usr/local/bin /usr/local/bin
+
+# Copy your project code
 COPY . .
 
-# Expose Streamlit port
+# Streamlit uses port 8501
 EXPOSE 8501
 
-# Environment configs
-ENV STREAMLIT_SERVER_ENABLECORS=false
-ENV STREAMLIT_SERVER_ENABLEXSRFPROTECTION=false
-ENV RAPIDAPI_KEY=""
+# Optional: clean environment vars
+ENV PYTHONUNBUFFERED=1
 
-# Run Streamlit app (make sure path is correct)
-CMD ["streamlit", "run", "src/main.py", "--server.port=8501", "--server.address=0.0.0.0"]
+# Run the Streamlit app
+CMD ["streamlit", "run", "src/main.py"]
