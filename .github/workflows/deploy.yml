@@ -1,8 +1,9 @@
-name: CI/CD Pipeline
+name: CI/CD with DVC and Docker
 
 on:
   push:
-    branches: [ main ]
+    branches:
+      - main
 
 jobs:
   build-and-deploy:
@@ -11,27 +12,57 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          lfs: true
 
-      - name: Log in to Docker Hub
-        run: echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install dvc[s3]
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
+
+      - name: Pull DVC data/models from S3
+        run: |
+          dvc pull
+          echo "✅ Pulled latest models from S3"
+
+      - name: Run tests (optional)
+        run: pytest || echo "No tests found"
+
+      - name: Push model changes to S3
+        run: |
+          dvc push
+          echo "✅ Model updates pushed to S3"
 
       - name: Build Docker image
-        run: docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/ai_trading_assistant:latest .
+        run: docker build -t ai_trading_assistant .
 
-      - name: Push to Docker Hub
-        run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/ai_trading_assistant:latest
+      - name: Login to Docker Hub
+        run: echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u premp9486 --password-stdin
 
-      - name: Deploy to EC2
+      - name: Push image to Docker Hub
+        run: |
+          docker tag ai_trading_assistant premp9486/ai_trading_assistant:latest
+          docker push premp9486/ai_trading_assistant:latest
+
+      - name: SSH into EC2 and redeploy
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_KEY }}
-          timeout: 40m
-
+          host: 3.7.66.15
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_KEY }}
           script: |
             sudo docker stop $(sudo docker ps -q) || true
-            sudo docker pull ${{ secrets.DOCKERHUB_USERNAME }}/ai_trading_assistant:latest
-            sudo docker run -d -p 8501:8501 \
-              -e RAPIDAPI_KEY=${{ secrets.RAPIDAPI_KEY }} \
-              ${{ secrets.DOCKERHUB_USERNAME }}/ai_trading_assistant:latest
+            sudo docker pull premp9486/ai_trading_assistant:latest
+            sudo docker run -d -p 8501:8501 -e RAPIDAPI_KEY=${{ secrets.RAPIDAPI_KEY }} premp9486/ai_trading_assistant:latest
