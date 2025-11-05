@@ -1,4 +1,4 @@
-name: CI/CD with DVC + EC2 Docker Build (Showcase S3)
+name: CI/CD with DVC + EC2 Docker Build
 
 on:
   push:
@@ -23,11 +23,11 @@ jobs:
       - name: Install DVC (for reproducibility)
         run: |
           pip install "dvc[s3]"
-          echo "✅ DVC installed for metadata + reproducibility"
+          echo "✅ DVC installed for reproducibility (S3 optional demo)"
           dvc status || true
-          dvc pull || echo "ℹ️ Skipping pull since S3 is for demonstration only"
+          dvc pull || echo "ℹ️ Skipping pull since S3 is only for showcase"
 
-      - name: Configure AWS (for demo — not required in runtime)
+      - name: Configure AWS (for DVC showcase only)
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -37,7 +37,7 @@ jobs:
       - name: SSH into EC2 and deploy container
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: 3.7.66.15
+          host: 65.2.37.102          # ✅ Updated EC2 public IP
           username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
           script_stop: true
@@ -57,10 +57,10 @@ jobs:
             sudo docker rm $(sudo docker ps -aq) || true
             sudo docker system prune -af
 
-            echo "🐳 Building Docker image directly on EC2 (no size issues)..."
+            echo "🐳 Building Docker image directly on EC2 (avoids GitHub disk issues)..."
             sudo docker build -t ai_trading_assistant .
 
-            echo "🚀 Running container on port 80 (maps to 8501)..."
+            echo "🚀 Running container on port 80 (maps to Streamlit 8501)..."
             sudo docker run -d --name ai-trading \
               -p 80:8501 \
               -e RAPIDAPI_KEY='${{ secrets.RAPIDAPI_KEY }}' \
@@ -68,6 +68,6 @@ jobs:
 
             echo "✅ Verifying app is running..."
             sleep 10
-            curl -fsS http://localhost/ || (echo "App failed to start" && exit 1)
+            curl -fsS http://localhost/ || (echo 'App failed to start' && exit 1)
 
-            echo "🎯 Deployment complete. Visit: http://3.7.66.15"
+            echo "🎯 Deployment complete! Visit: http://65.2.37.102"
