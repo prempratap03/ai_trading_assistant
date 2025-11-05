@@ -17,9 +17,11 @@ COPY requirements.txt .
 
 
 # Install only necessary dependencies in build layer
-RUN pip install --upgrade pip
-RUN pip install --no-cache-dir --upgrade cmdstanpy==1.2.0 prophet==1.1.5
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir --upgrade pip \
+ && pip install --no-cache-dir --upgrade cmdstanpy==1.2.0 prophet==1.1.5 \
+ && pip install --no-cache-dir -r requirements.txt \
+ && rm -rf /root/.cache /tmp/*
+
 
 # Copy full project
 COPY . .
