@@ -15,4 +15,4 @@ __pycache__/
 data/
 models/
 predictions/
-/test.txt
+/models
