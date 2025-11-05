@@ -10,6 +10,13 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Free up space on GitHub runner
+        run: |
+          echo "🧹 Cleaning up disk space..."
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/lib/android /usr/local/share/boost
+          sudo docker system prune -af || true
+          df -h
+
       # 1️⃣ Pull latest code
       - name: Checkout code
         uses: actions/checkout@v4
