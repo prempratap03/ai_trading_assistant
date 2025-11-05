@@ -38,5 +38,5 @@ EXPOSE 8501
 # Optional: clean environment vars
 ENV PYTHONUNBUFFERED=1
 
-# Run the Streamlit app
-CMD ["streamlit", "run", "src/main.py"]
+# Default command to run your Streamlit app
+CMD ["streamlit", "run", "src/main.py", "--server.port=8501", "--server.address=0.0.0.0"]
