@@ -1,4 +1,4 @@
-name: CI/CD with DVC and EC2 Docker Build
+name: CI/CD with DVC + EC2 Docker Build (Showcase S3)
 
 on:
   push:
@@ -22,34 +22,52 @@ jobs:
 
       - name: Install DVC (for reproducibility)
         run: |
-          pip install dvc[s3]
-          dvc pull || echo "No DVC data needed"
+          pip install "dvc[s3]"
+          echo "✅ DVC installed for metadata + reproducibility"
+          dvc status || true
+          dvc pull || echo "ℹ️ Skipping pull since S3 is for demonstration only"
 
-      - name: Configure AWS (optional for S3)
+      - name: Configure AWS (for demo — not required in runtime)
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
 
-      - name: SSH into EC2 and redeploy
+      - name: SSH into EC2 and deploy container
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: 3.7.66.15
           username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
           script_stop: true
-          command_timeout: 30m
+          command_timeout: 40m
           script: |
             set -euxo pipefail
-            docker login -u premp9486 -p '${{ secrets.DOCKERHUB_TOKEN }}'
-            docker ps -q | xargs -r docker stop
-            docker ps -aq | xargs -r docker rm
-            docker pull premp9486/ai_trading_assistant:latest
-            # Map port 80 on EC2 → 8501 in container so you can use plain http://3.7.66.15
-            docker run -d --name ai-trading \
+
+            echo "🔄 Pulling latest code on EC2..."
+            if [ ! -d ~/ai_trading_assistant ]; then
+              git clone https://github.com/prempratap03/ai_trading_assistant.git ~/ai_trading_assistant
+            fi
+            cd ~/ai_trading_assistant
+            git pull origin main
+
+            echo "🧹 Cleaning old containers..."
+            sudo docker stop $(sudo docker ps -q) || true
+            sudo docker rm $(sudo docker ps -aq) || true
+            sudo docker system prune -af
+
+            echo "🐳 Building Docker image directly on EC2 (no size issues)..."
+            sudo docker build -t ai_trading_assistant .
+
+            echo "🚀 Running container on port 80 (maps to 8501)..."
+            sudo docker run -d --name ai-trading \
               -p 80:8501 \
               -e RAPIDAPI_KEY='${{ secrets.RAPIDAPI_KEY }}' \
-              premp9486/ai_trading_assistant:latest
-            # quick health check (fails the job if app not up)
-            curl -fsS http://localhost/ > /dev/null
+              ai_trading_assistant
+
+            echo "✅ Verifying app is running..."
+            sleep 10
+            curl -fsS http://localhost/ || (echo "App failed to start" && exit 1)
+
+            echo "🎯 Deployment complete. Visit: http://3.7.66.15"
