@@ -15,8 +15,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Copy dependencies first for caching
 COPY requirements.txt .
 
+
 # Install only necessary dependencies in build layer
-RUN pip install --upgrade pip && pip install  -r requirements.txt
+RUN pip install --upgrade pip
+RUN pip install --no-cache-dir --upgrade cmdstanpy==1.2.0 prophet==1.1.5
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy full project
 COPY . .
