@@ -1,0 +1,5 @@
+[core]
+    remote = s3remote
+['remote "s3remote"']
+    url = s3://mlops-dvc2-prem/ai_trading_assistant
+    endpointurl = https://s3.ap-south-1.amazonaws.com
