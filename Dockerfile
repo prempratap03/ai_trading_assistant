@@ -1,42 +1,30 @@
-# ---- Stage 1: Builder ----
-FROM python:3.10-slim as builder
+# Use slim Python base to save several GB
+FROM python:3.10-slim AS builder
 
 WORKDIR /app
 
-# Install system dependencies needed for Prophet and other libs
+# Pre-install build tools just for Prophet/CMDStanPy
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
-    libpython3-dev \
-    gcc \
-    g++ \
-    git \
-    && rm -rf /var/lib/apt/lists/*
+    gcc g++ make curl \
+ && pip install --no-cache-dir --upgrade pip setuptools wheel \
+ && pip install --no-cache-dir cmdstanpy==1.2.0 prophet==1.1.5 \
+ && apt-get clean && rm -rf /var/lib/apt/lists/* /root/.cache
 
-# Copy only requirement files first (to leverage caching)
 COPY requirements.txt .
 
-# Install only core dependencies with no cache
-RUN pip install --no-cache-dir --upgrade pip setuptools wheel \
- && pip install --no-cache-dir cmdstanpy==1.2.0 prophet==1.1.5 \
- && pip install --no-cache-dir -r requirements.txt \
- && rm -rf /root/.cache /tmp/*
+RUN pip install --no-cache-dir -r requirements.txt
 
-# ---- Stage 2: Runtime ----
+# Final smaller runtime image
 FROM python:3.10-slim
 
 WORKDIR /app
 
-# Copy installed Python packages from builder image
+# Copy only installed Python libs from builder
 COPY --from=builder /usr/local/lib/python3.10 /usr/local/lib/python3.10
-
-# Copy your project code
 COPY . .
 
-# Streamlit uses port 8501
+# Ensure Streamlit is accessible
+RUN pip install --no-cache-dir streamlit
+
 EXPOSE 8501
-
-# Optional: clean environment vars
-ENV PYTHONUNBUFFERED=1
-
-# Default command to run your Streamlit app
 CMD ["streamlit", "run", "src/main.py", "--server.port=8501", "--server.address=0.0.0.0"]
