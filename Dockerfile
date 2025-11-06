@@ -1,38 +1,46 @@
-# Use slim Python base to save several GB
+# Use slim Python base
 FROM python:3.10-slim AS builder
 WORKDIR /app
 
-# Pre-install build tools just for Prophet/CMDStanPy
+# Install build tools
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc g++ make curl \
  && pip install --no-cache-dir --upgrade pip setuptools wheel \
  && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements and remove prophet if it's there (we'll install it separately)
+# Copy requirements
 COPY requirements.txt .
+
+# Remove prophet/cmdstanpy from requirements
 RUN grep -v "prophet\|cmdstanpy" requirements.txt > requirements_filtered.txt || cp requirements.txt requirements_filtered.txt
 
-# Install Prophet first (heavy dependency)
-RUN pip install --no-cache-dir cmdstanpy==1.2.0 prophet==1.1.5
+# Install Prophet first
+RUN pip install --no-cache-dir cmdstanpy==1.2.0 prophet==1.1.5 \
+ && rm -rf ~/.cache/pip /tmp/*
 
-# Install remaining requirements
-RUN pip install --no-cache-dir -r requirements_filtered.txt
+# Install remaining packages ONE AT A TIME to reduce memory peaks
+RUN while IFS= read -r package; do \
+      [ -z "$package" ] && continue; \
+      echo "Installing $package..."; \
+      pip install --no-cache-dir "$package" && \
+      rm -rf ~/.cache/pip /tmp/*; \
+    done < requirements_filtered.txt
 
-# Clean up build artifacts
+# Clean up build tools
 RUN apt-get purge -y gcc g++ make curl \
  && apt-get autoremove -y \
  && apt-get clean \
- && rm -rf /var/lib/apt/lists/* /root/.cache /tmp/*
+ && rm -rf /var/lib/apt/lists/* /root/.cache /tmp/* ~/.cache
 
-# Final smaller runtime image
+# Final runtime image
 FROM python:3.10-slim
 WORKDIR /app
 
-# Copy only installed Python libs from builder
+# Copy Python packages
 COPY --from=builder /usr/local/lib/python3.10 /usr/local/lib/python3.10
 COPY --from=builder /usr/local/bin /usr/local/bin
 
-# Copy application code
+# Copy app
 COPY . .
 
 EXPOSE 8501
