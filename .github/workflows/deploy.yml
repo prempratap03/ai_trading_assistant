@@ -1,81 +1,59 @@
-- name: SSH into EC2 and build + run container
-  uses: appleboy/ssh-action@v1.0.3
-  with:
-    host: 13.203.78.90 
-    username: ubuntu
-    key: ${{ secrets.EC2_SSH_KEY }}
-    script_stop: true
-    command_timeout: 40m
-    script: |
-      set -euxo pipefail
+name: Deploy to EC2 with Self-Hosted Runner
+on:
+  push:
+    branches:
+      - main
       
-      echo "💾 Ensuring swap space is active..."
-      # Check if swapfile exists and activate it
-      if [ -f /swapfile ]; then
-        sudo swapon /swapfile 2>/dev/null || echo "Swap already active"
-      else
-        # Create swap if it doesn't exist
-        sudo fallocate -l 4G /swapfile
-        sudo chmod 600 /swapfile
-        sudo mkswap /swapfile
-        sudo swapon /swapfile
-        echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
-      fi
+jobs:
+  deploy:
+    runs-on: self-hosted
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Check resources
+        run: |
+          echo "📊 Disk Space:"
+          df -h
+          echo ""
+          echo "📊 Memory:"
+          free -h
       
-      echo "📊 Memory status:"
-      free -h
+      - name: Activate swap
+        run: |
+          sudo swapon /swapfile 2>/dev/null || echo "Swap already active"
+          free -h
       
-      echo "🧹 Cleaning up Docker..."
-      # Stop and remove old container
-      if sudo docker ps -a | grep -q ai-trading; then
-        sudo docker stop ai-trading || true
-        sudo docker rm ai-trading || true
-      fi
+      - name: Clean Docker
+        run: |
+          sudo docker stop ai-trading 2>/dev/null || true
+          sudo docker rm ai-trading 2>/dev/null || true
+          sudo docker system prune -af --volumes
+          sudo docker builder prune -af
       
-      # Clean Docker resources
-      sudo docker system prune -af --volumes
-      sudo docker builder prune -af
+      - name: Build Docker image
+        run: |
+          export DOCKER_BUILDKIT=1
+          sudo DOCKER_BUILDKIT=1 docker build -t ai_trading_assistant .
       
-      # Remove all images
-      if [ "$(sudo docker images -q)" ]; then
-        sudo docker rmi -f $(sudo docker images -aq)
-      fi
+      - name: Start container
+        env:
+          RAPIDAPI_KEY: ${{ secrets.RAPIDAPI_KEY }}
+        run: |
+          sudo docker run -d --name ai-trading -p 80:8501 \
+            --memory="700m" \
+            --memory-swap="1g" \
+            -e RAPIDAPI_KEY="${RAPIDAPI_KEY}" \
+            ai_trading_assistant
       
-      # Clean system caches
-      sudo apt-get clean
-      sudo rm -rf /var/lib/apt/lists/* /tmp/* ~/.cache
+      - name: Verify deployment
+        run: |
+          echo "✅ Deployment complete!"
+          sudo docker ps
+          sleep 5
+          sudo docker logs ai-trading --tail 50
       
-      echo "📊 Disk space:"
-      df -h
-      
-      # Update repo
-      if [ ! -d ~/ai_trading_assistant ]; then
-        git clone https://github.com/prempratap03/ai_trading_assistant.git ~/ai_trading_assistant
-      fi
-      
-      cd ~/ai_trading_assistant
-      git pull origin main
-      
-      # Build with BuildKit
-      echo "🐳 Building Docker image..."
-      export DOCKER_BUILDKIT=1
-      sudo DOCKER_BUILDKIT=1 docker build \
-        --progress=plain \
-        -t ai_trading_assistant .
-      
-      # Clean up after build
-      sudo docker builder prune -f
-      
-      echo "📊 Memory after build:"
-      free -h
-      
-      echo "🚀 Starting container..."
-      sudo docker run -d --name ai-trading -p 80:8501 \
-        --memory="700m" \
-        --memory-swap="1g" \
-        -e RAPIDAPI_KEY='${{ secrets.RAPIDAPI_KEY }}' \
-        ai_trading_assistant
-      
-      echo "✅ Deployment complete!"
-      sudo docker ps
-      sudo docker logs ai-trading --tail 50
+      - name: Cleanup
+        if: always()
+        run: |
+          sudo docker system prune -f
