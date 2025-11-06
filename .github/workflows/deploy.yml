@@ -1,100 +1,81 @@
-name: CI/CD with DVC + EC2 Docker Build
-on:
-  push:
-    branches:
-      - main
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
-        with:
-          lfs: true
+- name: SSH into EC2 and build + run container
+  uses: appleboy/ssh-action@v1.0.3
+  with:
+    host: 13.203.78.90 
+    username: ubuntu
+    key: ${{ secrets.EC2_SSH_KEY }}
+    script_stop: true
+    command_timeout: 40m
+    script: |
+      set -euxo pipefail
       
-      - name: Set up Python for DVC
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.10"
+      echo "💾 Ensuring swap space is active..."
+      # Check if swapfile exists and activate it
+      if [ -f /swapfile ]; then
+        sudo swapon /swapfile 2>/dev/null || echo "Swap already active"
+      else
+        # Create swap if it doesn't exist
+        sudo fallocate -l 4G /swapfile
+        sudo chmod 600 /swapfile
+        sudo mkswap /swapfile
+        sudo swapon /swapfile
+        echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
+      fi
       
-      - name: Install DVC (for reproducibility)
-        run: |
-          pip install "dvc[s3]"
-          echo "✅ DVC installed for reproducibility (S3 optional demo)"
-          dvc status || true
-          dvc pull || echo "ℹ️ Skipping pull since S3 is only for showcase"
+      echo "📊 Memory status:"
+      free -h
       
-      - name: Configure AWS (for DVC showcase only)
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
+      echo "🧹 Cleaning up Docker..."
+      # Stop and remove old container
+      if sudo docker ps -a | grep -q ai-trading; then
+        sudo docker stop ai-trading || true
+        sudo docker rm ai-trading || true
+      fi
       
-      - name: SSH into EC2 and build + run container
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: 13.203.78.90 
-          username: ubuntu
-          key: ${{ secrets.EC2_SSH_KEY }}
-          script_stop: true
-          command_timeout: 40m
-          script: |
-            set -euxo pipefail
-            
-            echo "💾 Ensuring swap space is active..."
-            if [ ! -f /swapfile ]; then
-              sudo fallocate -l 4G /swapfile
-              sudo chmod 600 /swapfile
-              sudo mkswap /swapfile
-              sudo swapon /swapfile
-              echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
-            else
-              sudo swapon /swapfile 2>/dev/null || true
-            fi
-            
-            echo "📊 Memory status:"
-            free -h
-            
-            echo "🧹 Cleaning up Docker..."
-            sudo docker stop ai-trading 2>/dev/null || true
-            sudo docker rm ai-trading 2>/dev/null || true
-            sudo docker system prune -af --volumes
-            sudo docker builder prune -af
-            sudo docker rmi -f $(sudo docker images -aq) 2>/dev/null || true
-            
-            # Clean system caches
-            sudo apt-get clean
-            sudo rm -rf /var/lib/apt/lists/* /tmp/* ~/.cache
-            
-            echo "📊 Disk space:"
-            df -h
-            
-            # Update repo
-            cd ~/ai_trading_assistant || git clone https://github.com/prempratap03/ai_trading_assistant.git ~/ai_trading_assistant
-            cd ~/ai_trading_assistant
-            git pull origin main
-            
-            # Build with BuildKit
-            echo "🐳 Building Docker image..."
-            export DOCKER_BUILDKIT=1
-            sudo DOCKER_BUILDKIT=1 docker build \
-              --progress=plain \
-              -t ai_trading_assistant .
-            
-            # Clean up after build
-            sudo docker builder prune -f
-            
-            echo "📊 Memory after build:"
-            free -h
-            
-            echo "🚀 Starting container..."
-            sudo docker run -d --name ai-trading -p 80:8501 \
-              --memory="700m" \
-              --memory-swap="1g" \
-              -e RAPIDAPI_KEY='${{ secrets.RAPIDAPI_KEY }}' \
-              ai_trading_assistant
-            
-            echo "✅ Deployment complete!"
-            sudo docker ps
-            sudo docker logs ai-trading --tail 50
+      # Clean Docker resources
+      sudo docker system prune -af --volumes
+      sudo docker builder prune -af
+      
+      # Remove all images
+      if [ "$(sudo docker images -q)" ]; then
+        sudo docker rmi -f $(sudo docker images -aq)
+      fi
+      
+      # Clean system caches
+      sudo apt-get clean
+      sudo rm -rf /var/lib/apt/lists/* /tmp/* ~/.cache
+      
+      echo "📊 Disk space:"
+      df -h
+      
+      # Update repo
+      if [ ! -d ~/ai_trading_assistant ]; then
+        git clone https://github.com/prempratap03/ai_trading_assistant.git ~/ai_trading_assistant
+      fi
+      
+      cd ~/ai_trading_assistant
+      git pull origin main
+      
+      # Build with BuildKit
+      echo "🐳 Building Docker image..."
+      export DOCKER_BUILDKIT=1
+      sudo DOCKER_BUILDKIT=1 docker build \
+        --progress=plain \
+        -t ai_trading_assistant .
+      
+      # Clean up after build
+      sudo docker builder prune -f
+      
+      echo "📊 Memory after build:"
+      free -h
+      
+      echo "🚀 Starting container..."
+      sudo docker run -d --name ai-trading -p 80:8501 \
+        --memory="700m" \
+        --memory-swap="1g" \
+        -e RAPIDAPI_KEY='${{ secrets.RAPIDAPI_KEY }}' \
+        ai_trading_assistant
+      
+      echo "✅ Deployment complete!"
+      sudo docker ps
+      sudo docker logs ai-trading --tail 50
