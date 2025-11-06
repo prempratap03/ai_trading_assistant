@@ -1,53 +1,40 @@
-name: CI/CD with DVC + EC2 Docker Build
-
-on:
-  push:
-    branches:
-      - main
-
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
-        with:
-          lfs: true
-
-      - name: Set up Python for DVC
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.10"
-
-      - name: Install DVC (for reproducibility)
-        run: |
-          pip install "dvc[s3]"
-          echo "✅ DVC installed for reproducibility (S3 optional demo)"
-          dvc status || true
-          dvc pull || echo "ℹ️ Skipping pull since S3 is only for showcase"
-
-      - name: Configure AWS (for DVC showcase only)
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
-      - name: SSH into EC2 and build + run container
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: 13.203.78.90 
-          username: ubuntu
-          key: ${{ secrets.EC2_SSH_KEY }}
-          script_stop: true
-          command_timeout: 40m
-          script: |
-            set -euxo pipefail
-            cd ~/ai_trading_assistant || git clone https://github.com/prempratap03/ai_trading_assistant.git ~/ai_trading_assistant
-            cd ~/ai_trading_assistant
-            git pull origin main
-            sudo docker system prune -af --volumes
-            echo "🐳 Building image on EC2..."
-            sudo docker build -t ai_trading_assistant .
-            echo "🚀 Running container on port 80..."
-            sudo docker run -d --name ai-trading -p 80:8501 -e RAPIDAPI_KEY='${{ secrets.RAPIDAPI_KEY }}' ai_trading_assistant
+- name: SSH into EC2 and build + run container
+  uses: appleboy/ssh-action@v1.0.3
+  with:
+    host: 13.203.78.90 
+    username: ubuntu
+    key: ${{ secrets.EC2_SSH_KEY }}
+    script_stop: true
+    command_timeout: 40m
+    script: |
+      set -euxo pipefail
+      
+      # Clean up Docker resources
+      sudo docker system prune -af --volumes
+      
+      # Clean up apt cache
+      sudo apt-get clean
+      sudo rm -rf /var/lib/apt/lists/*
+      
+      # Remove old images more aggressively
+      sudo docker rmi $(sudo docker images -q) 2>/dev/null || true
+      
+      # Clean pip cache
+      rm -rf ~/.cache/pip
+      
+      # Check available space
+      df -h
+      
+      cd ~/ai_trading_assistant || git clone https://github.com/prempratap03/ai_trading_assistant.git ~/ai_trading_assistant
+      cd ~/ai_trading_assistant
+      git pull origin main
+      
+      echo "🐳 Building image on EC2..."
+      sudo docker build -t ai_trading_assistant .
+      
+      echo "🚀 Running container on port 80..."
+      sudo docker stop ai-trading 2>/dev/null || true
+      sudo docker rm ai-trading 2>/dev/null || true
+      sudo docker run -d --name ai-trading -p 80:8501 \
+        -e RAPIDAPI_KEY='${{ secrets.RAPIDAPI_KEY }}' \
+        ai_trading_assistant
